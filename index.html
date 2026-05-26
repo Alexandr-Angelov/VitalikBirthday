@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Воспоминания</title>
+    <style>
+        :root {
+            --bg-color: #f5f5dc;
+            --primary-color: #2e8b57;
+            --header-color: #1b5e20;
+            --secondary-color: #4a7c59;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: var(--header-color);
+            color: white;
+            width: 100%;
+            padding: 15px 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .controls-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #game-container {
+            position: relative;
+            width: 90vw;
+            max-width: 320px;
+            height: 120vw;
+            max-height: 420px;
+            display: none;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            margin: 15px 0;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+            z-index: 2;
+        }
+
+        #photo-under {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            width: 100%;
+            max-width: 280px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        #action-btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        #final-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 30px 20px;
+            width: 100%;
+            gap: 15px;
+        }
+
+        #final-message {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--header-color);
+            line-height: 1.4;
+            margin-bottom: 15px;
+            animation: fadeIn 1.5s ease-in;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .gallery-item {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .gallery-item:active {
+            transform: scale(0.95);
+        }
+
+        #viewer-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+        }
+
+        #viewer-img-container {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #viewer-img {
+            max-width: 95%;
+            max-height: 80vh;
+            object-fit: contain;
+            transition: transform 0.1s ease-out;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .viewer-btn {
+            position: absolute;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 105;
+        }
+
+        #prev-viewer-btn { left: 15px; }
+        #next-viewer-btn { right: 15px; }
+
+        #viewer-controls {
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 105;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        #close-viewer-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: white;
+            font-size: 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 110;
+        }
+
+        #video-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            z-index: 200;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #video-play-btn {
+            width: 80px;
+            height: 80px;
+            background-color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            transition: transform 0.2s;
+        }
+
+        #video-play-btn:active {
+            transform: scale(0.9);
+        }
+
+        #video-play-btn div {
+            width: 0;
+            height: 0;
+            border-top: 15px solid transparent;
+            border-left: 25px solid black;
+            border-bottom: 15px solid transparent;
+            margin-left: 5px;
+        }
+
+        #congratulation-video {
+            display: none;
+            width: 100%;
+            max-width: 640px;
+            max-height: 100vh;
+        }
+
+        #birthday-text {
+            display: none;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            line-height: 1.5;
+            animation: zoomInText 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            z-index: 210;
+        }
+
+        #close-video-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: white;
+            font-size: 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 220;
+        }
+
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 205;
+        }
+
+        @keyframes zoomInText {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>✨Воспоминания</h1>
+</header>
+
+<div class="controls-container">
+    <button class="btn" id="start-btn">Получить воспоминание</button>
+</div>
+
+<div id="game-container">
+    <img id="photo-under" src="" alt="Воспоминание">
+    <canvas id="scratch-canvas"></canvas>
+</div>
+
+<div class="controls-container" id="action-btn-container">
+    <button class="btn btn-secondary" id="reveal-btn" style="display: none;">Показать полностью</button>
+    <button class="btn" id="next-btn" style="display: none;">Следующее воспоминание</button>
+</div>
+
+<div id="final-screen">
+    <div id="final-message">
+        Воспоминания закончились,<br>пора создавать новые ✨
+    </div>
+    <button class="btn" id="open-gallery-btn">Просмотреть фото</button>
+    <button class="btn" id="get-congrats-btn" style="background-color: #8b2e2e; box-shadow: 0 4px 12px rgba(139, 46, 46, 0.3);">Получить поздравления</button>
+    <div class="gallery-grid" id="gallery-grid" style="display: none;"></div>
+</div>
+
+<div id="viewer-overlay">
+    <button id="close-viewer-btn">&times;</button>
+    
+    <button class="viewer-btn" id="prev-viewer-btn">&#10094;</button>
+    <div id="viewer-img-container">
+        <img id="viewer-img" src="" alt="Просмотр">
+    </div>
+    <button class="viewer-btn" id="next-viewer-btn">&#10095;</button>
+
+    <div id="viewer-controls">
+        <button class="icon-btn" id="zoom-out-btn">&#10134;</button>
+        <button class="icon-btn" id="download-btn">&#128190;</button>
+        <button class="icon-btn" id="zoom-in-btn">&#10133;</button>
+    </div>
+</div>
+
+<div id="video-overlay">
+    <button id="close-video-btn">&times;</button>
+    <button id="video-play-btn"><div></div></button>
+    <video id="congratulation-video" src="images/Video.Guru_20260526_184853491.mp4" controls></video>
+    <div id="birthday-text">З днем народженням Віталік !!! 🎉🎂</div>
+    <canvas id="confetti-canvas"></canvas>
+</div>
+
+<script>
+    const photos = [
+        "images/IMG_0201.jpg",
+        "images/IMG_0241.JPG",
+        "images/IMG_0323.JPG",
+        "images/IMG_0335.JPG",
+        "images/IMG_0491.jpg",
+        "images/IMG_0787.jpg",
+        "images/IMG_0800.jpg",
+        "images/IMG_0980.jpg",
+        "images/IMG_1329.jpg",
+        "images/IMG_1638.JPG",
+        "images/IMG_2050.JPG",
+        "images/IMG_2427.JPG",
+        "images/IMG_2919.jpg",
+        "images/IMG_3153.JPG",
+        "images/IMG_3176.jpg",
+        "images/IMG_3273.JPG",
+        "images/IMG_3280.jpg",
+        "images/IMG_3352.JPG",
+        "images/IMG_3900.jpg",
+        "images/IMG_3942.jpg",
+        "images/IMG_4626.jpg",
+        "images/IMG_5213.jpg",
+        "images/IMG_5604.jpg",
+        "images/IMG_6196.jpg",
+        "images/IMG_6318.JPG",
+        "images/IMG_6692.JPG",
+        "images/IMG_7075.jpg",
+        "images/IMG_7451.jpg",
+        "images/IMG_8091.jpg",
+        "images/IMG_8566.JPG",
+        "images/IMG_8568.JPG",
+        "images/IMG_8573.JPG"
+    ];
+
+    let currentIndex = 0;
+    let isDrawing = false;
+    let currentScale = 1;
+    let viewerIndex = 0;
+    let confettiAnimationId = null;
+    let confettiParticles = [];
+    
+    const startBtn = document.getElementById('start-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const revealBtn = document.getElementById('reveal-btn');
+    const container = document.getElementById('game-container');
+    const photoImg = document.getElementById('photo-under');
+    const canvas = document.getElementById('scratch-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const finalScreen = document.getElementById('final-screen');
+    const openGalleryBtn = document.getElementById('open-gallery-btn');
+    const getCongratsBtn = document.getElementById('get-congrats-btn');
+    const galleryGrid = document.getElementById('gallery-grid');
+    
+    const viewerOverlay = document.getElementById('viewer-overlay');
+    const viewerImg = document.getElementById('viewer-img');
+    const closeViewerBtn = document.getElementById('close-viewer-btn');
+    const prevViewerBtn = document.getElementById('prev-viewer-btn');
+    const nextViewerBtn = document.getElementById('next-viewer-btn');
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const downloadBtn = document.getElementById('download-btn');
+
+    const videoOverlay = document.getElementById('video-overlay');
+    const videoPlayBtn = document.getElementById('video-play-btn');
+    const congratulationVideo = document.getElementById('congratulation-video');
+    const birthdayText = document.getElementById('birthday-text');
+    const closeVideoBtn = document.getElementById('close-video-btn');
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+
+    function initScratch() {
+        if (currentIndex >= photos.length) {
+            container.style.display = 'none';
+            startBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            revealBtn.style.display = 'none';
+            finalScreen.style.display = 'flex';
+            buildGallery();
+            return;
+        }
+
+        photoImg.src = photos[currentIndex];
+        container.style.display = 'block';
+        startBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        revealBtn.style.display = 'block';
+
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width || 320;
+        canvas.height = rect.height || 420;
+        
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = 'black';
+        ctx.font = `bold ${canvas.width * 0.25}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', canvas.width / 2, canvas.height / 2);
+
+        ctx.globalCompositeOperation = 'destination-out';
+    }
+
+    function getCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    function drawStart(e) {
+        isDrawing = true;
+        drawMove(e);
+    }
+
+    function drawMove(e) {
+        if (!isDrawing) return;
+        const coords = getCoordinates(e);
+        
+        ctx.beginPath();
+        ctx.arc(coords.x, coords.y, 25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        checkScratch();
+    }
+
+    function drawEnd() {
+        isDrawing = false;
+    }
+
+    function revealAll() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        revealBtn.style.display = 'none';
+        nextBtn.style.display = 'block';
+    }
+
+    function checkScratch() {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let clearPixels = 0;
+        const totalPixels = imageData.data.length / 4;
+        
+        for (let i = 3; i < imageData.data.length; i += 4) {
+            if (imageData.data[i] === 0) clearPixels++;
+        }
+        
+        if (clearPixels > totalPixels * 0.55) {
+            revealBtn.style.display = 'none';
+            nextBtn.style.display = 'block';
+        }
+    }
+
+    function buildGallery() {
+        galleryGrid.innerHTML = '';
+        photos.forEach((src, index) => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'gallery-item';
+            img.addEventListener('click', () => openViewer(index));
+            galleryGrid.appendChild(img);
+        });
+    }
+
+    function openViewer(index) {
+        viewerIndex = index;
+        currentScale = 1;
+        viewerImg.style.transform = `scale(${currentScale})`;
+        viewerImg.src = photos[viewerIndex];
+        viewerOverlay.style.display = 'flex';
+    }
+
+    function closeViewer() {
+        viewerOverlay.style.display = 'none';
+    }
+
+    function navigateViewer(direction) {
+        viewerIndex += direction;
+        if (viewerIndex < 0) viewerIndex = photos.length - 1;
+        if (viewerIndex >= photos.length) viewerIndex = 0;
+        currentScale = 1;
+        viewerImg.style.transform = `scale(${currentScale})`;
+        viewerImg.src = photos[viewerIndex];
+    }
+
+    function initConfetti() {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+        confettiParticles = [];
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff'];
+        for (let i = 0; i < 150; i++) {
+            confettiParticles.push({
+                x: Math.random() * confettiCanvas.width,
+                y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+                r: Math.random() * 6 + 4,
+                d: Math.random() * confettiCanvas.height,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                tilt: Math.random() * 10 - 5,
+                tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                tiltAngle: 0
+            });
+        }
+    }
+
+    function drawConfetti() {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiParticles.forEach((p, index) => {
+            p.tiltAngle += p.tiltAngleIncremental;
+            p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+            p.x += Math.sin(p.tiltAngle);
+            p.tilt = Math.sin(p.tiltAngle - index / 3) * 15;
+
+            if (p.y > confettiCanvas.height) {
+                confettiParticles[index] = p;
+                p.x = Math.random() * confettiCanvas.width;
+                p.y = -20;
+                p.tilt = Math.random() * 10 - 5;
+            }
+
+            confettiCtx.beginPath();
+            confettiCtx.lineWidth = p.r;
+            confettiCtx.strokeStyle = p.color;
+            confettiCtx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+            confettiCtx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+            confettiCtx.stroke();
+        });
+        confettiAnimationId = requestAnimationFrame(drawConfetti);
+    }
+
+    startBtn.addEventListener('click', initScratch);
+    
+    nextBtn.addEventListener('click', () => {
+        currentIndex++;
+        initScratch();
+    });
+
+    revealBtn.addEventListener('click', revealAll);
+
+    openGalleryBtn.addEventListener('click', () => {
+        galleryGrid.style.display = galleryGrid.style.display === 'none' ? 'grid' : 'none';
+        openGalleryBtn.textContent = galleryGrid.style.display === 'none' ? 'Просмотреть фото' : 'Скрыть фото';
+    });
+
+    closeViewerBtn.addEventListener('click', closeViewer);
+    prevViewerBtn.addEventListener('click', () => navigateViewer(-1));
+    nextViewerBtn.addEventListener('click', () => navigateViewer(1));
+
+    zoomInBtn.addEventListener('click', () => {
+        if (currentScale < 3) {
+            currentScale += 0.3;
+            viewerImg.style.transform = `scale(${currentScale})`;
+        }
+    });
+
+    zoomOutBtn.addEventListener('click', () => {
+        if (currentScale > 1) {
+            currentScale -= 0.3;
+            viewerImg.style.transform = `scale(${currentScale})`;
+        }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = photos[viewerIndex];
+        a.download = `memory_${viewerIndex + 1}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+
+    getCongratsBtn.addEventListener('click', () => {
+        videoOverlay.style.display = 'flex';
+        videoPlayBtn.style.display = 'flex';
+        congratulationVideo.style.display = 'none';
+        birthdayText.style.display = 'none';
+    });
+
+    videoPlayBtn.addEventListener('click', () => {
+        videoPlayBtn.style.display = 'none';
+        congratulationVideo.style.display = 'block';
+        congratulationVideo.play();
+    });
+
+    congratulationVideo.addEventListener('ended', () => {
+        congratulationVideo.style.display = 'none';
+        birthdayText.style.display = 'block';
+        initConfetti();
+        drawConfetti();
+    });
+
+    closeVideoBtn.addEventListener('click', () => {
+        congratulationVideo.pause();
+        congratulationVideo.currentTime = 0;
+        videoOverlay.style.display = 'none';
+        cancelAnimationFrame(confettiAnimationId);
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    });
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    viewerOverlay.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+        }
+    }, { passive: true });
+
+    viewerOverlay.addEventListener('touchend', (e) => {
+        if (currentScale === 1 && e.changedTouches.length === 1) {
+            touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) navigateViewer(1);
+                else navigateViewer(-1);
+            }
+        }
+    }, { passive: true });
+
+    canvas.addEventListener('mousedown', drawStart);
+    canvas.addEventListener('mousemove', drawMove);
+    window.addEventListener('mouseup', drawEnd);
+
+    canvas.addEventListener('touchstart', (e) => { drawStart(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawMove(e); }, { passive: false });
+    window.addEventListener('touchend', drawEnd);
+
+    window.addEventListener('resize', () => {
+        if (container.style.display === 'block') {
+            const rect = container.getBoundingClientRect();
+            if (canvas.width !== rect.width) {
+                initScratch();
+            }
+        }
+        if (videoOverlay.style.display === 'flex' && birthdayText.style.display === 'block') {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+    });
+</script>
+
+</body>
+</html>
